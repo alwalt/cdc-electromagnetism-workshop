@@ -7,10 +7,11 @@ from math import pi, cos, sin
 # ============================
 
 scene.title = "Electron Drift Speed vs Voltage and Temperature"
-scene.width = 1000
-scene.height = 600
+scene.width = 750
+scene.height = 500
 scene.background = color.white
 scene.range = 10
+scene.align = 'left'
 
 # ----------------------------
 # Simulation parameters
@@ -168,10 +169,11 @@ info = label(
 # ----------------------------
 g = graph(
     title="Mean Drift Speed vs Time",
-    xtitle="time",
+    xtitle="time (s)",
     ytitle="mean drift speed",
-    width=600,
-    height=250
+    width=480,
+    height=500,
+    align='right'
 )
 
 drift_curve = gcurve(color=color.blue)
