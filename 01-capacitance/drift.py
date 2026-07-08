@@ -14,6 +14,20 @@ scene.range = 10
 scene.align = 'left'
 
 # ----------------------------
+# Graph (created before caption so it floats beside the scene)
+# ----------------------------
+g = graph(
+    title="Electron Drift Speed (Drude Model)",
+    xtitle="simulation time",
+    ytitle="drift speed (μm/s)",
+    width=480,
+    height=500,
+    align='right'
+)
+
+drift_curve = gcurve(color=color.blue)
+
+# ----------------------------
 # Simulation parameters
 # ----------------------------
 N_electrons = 60
@@ -29,6 +43,18 @@ temperature = 20
 paused = False
 show_trails = False
 smoothed_drift = 0.0   # exponential moving average of mean drift speed
+
+# ----------------------------
+# Physical wire parameters — copper, 60 m long, 1 mm² cross-section
+# Gives realistic classroom values: ~250 μm/s and ~3 A at 3.4 V, 20 °C
+# ----------------------------
+WIRE_PHYS_LENGTH = 60.0    # m
+WIRE_PHYS_AREA   = 1.0e-6  # m²  (1 mm diameter equivalent)
+N_DENSITY        = 8.5e28  # free electrons/m³ (copper)
+E_CHARGE         = 1.6e-19 # C
+MOBILITY_0       = 4.4e-3  # m²/(V·s) at 20 °C (copper)
+ALPHA_COPPER     = 3.9e-3  # /°C  temperature coefficient of resistivity
+RESISTIVITY_0    = 1.7e-8  # Ω·m at 20 °C (copper)
 
 # ----------------------------
 # UI controls
@@ -165,20 +191,6 @@ info = label(
 )
 
 # ----------------------------
-# Graph
-# ----------------------------
-g = graph(
-    title="Mean Drift Speed vs Time",
-    xtitle="time (s)",
-    ytitle="mean drift speed",
-    width=480,
-    height=500,
-    align='right'
-)
-
-drift_curve = gcurve(color=color.blue)
-
-# ----------------------------
 # Reset button
 # ----------------------------
 
@@ -283,17 +295,24 @@ while True:
     # Smooth the drift speed so changes are clearly visible when sliders move
     smoothed_drift = 0.08 * mean_drift_speed + 0.92 * smoothed_drift
 
-    # Simplified relative current
-    relative_current = N_electrons * smoothed_drift
+    # --- Drude model: physically accurate values for copper wire ---
+    mobility   = MOBILITY_0 / (1 + ALPHA_COPPER * (temperature - 20))
+    E_field    = voltage / WIRE_PHYS_LENGTH                              # V/m
+    v_d_um_s   = mobility * E_field * 1e6                               # μm/s
+    resistivity = RESISTIVITY_0 * (1 + ALPHA_COPPER * (temperature - 20))
+    resistance  = resistivity * WIRE_PHYS_LENGTH / WIRE_PHYS_AREA       # Ω
+    current     = voltage / resistance if resistance > 0 else 0         # A
 
     info.text = (
         f"Voltage = {voltage:.1f} V    "
-        f"Temperature = {temperature:.0f} °C\n"
-        f"Mean drift speed = {smoothed_drift:.4f} simulation units    "
-        f"Relative current ≈ {relative_current:.2f}\n"
+        f"Electric field = {E_field:.4f} V/m\n"
+        f"Drift speed = {v_d_um_s:.1f} μm/s    "
+        f"Current = {current:.2f} A    "
+        f"Resistance = {resistance:.2f} Ω\n"
+        f"Temperature = {temperature:.0f} °C    "
         f"Collisions this frame = {collision_count}"
     )
 
-    drift_curve.plot(t, smoothed_drift)
+    drift_curve.plot(t, v_d_um_s)
 
     t += dt
