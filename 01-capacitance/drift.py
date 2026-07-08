@@ -56,6 +56,25 @@ MOBILITY_0       = 4.4e-3  # m²/(V·s) at 20 °C (copper)
 ALPHA_COPPER     = 3.9e-3  # /°C  temperature coefficient of resistivity
 RESISTIVITY_0    = 1.7e-8  # Ω·m at 20 °C (copper)
 
+# ============================================================
+# STUDENT EXERCISE  —  fill in the two lines below, then run
+# ============================================================
+# The electric field inside a wire:   E = V / L
+# The drift speed of electrons:       v_d = μ × E
+#
+# Variables available to you:
+#   voltage      — applied voltage (V)
+#   wire_length  — length of the wire in meters (m)
+#   mobility     — electron mobility (m²/V·s), already calculated for you
+# ============================================================
+
+def compute_drift_speed(voltage, wire_length, mobility):
+    E   = None    # replace None with:  voltage / wire_length
+    v_d = None    # replace None with:  mobility * E
+    return v_d
+
+# ============================================================
+
 # ----------------------------
 # UI controls
 # ----------------------------
@@ -296,23 +315,30 @@ while True:
     smoothed_drift = 0.08 * mean_drift_speed + 0.92 * smoothed_drift
 
     # --- Drude model: physically accurate values for copper wire ---
-    mobility   = MOBILITY_0 / (1 + ALPHA_COPPER * (temperature - 20))
-    E_field    = voltage / WIRE_PHYS_LENGTH                              # V/m
-    v_d_um_s   = mobility * E_field * 1e6                               # μm/s
+    mobility    = MOBILITY_0 / (1 + ALPHA_COPPER * (temperature - 20))
     resistivity = RESISTIVITY_0 * (1 + ALPHA_COPPER * (temperature - 20))
     resistance  = resistivity * WIRE_PHYS_LENGTH / WIRE_PHYS_AREA       # Ω
     current     = voltage / resistance if resistance > 0 else 0         # A
 
-    info.text = (
-        f"Voltage = {voltage:.1f} V    "
-        f"Electric field = {E_field:.4f} V/m\n"
-        f"Drift speed = {v_d_um_s:.1f} μm/s    "
-        f"Current = {current:.2f} A    "
-        f"Resistance = {resistance:.2f} Ω\n"
-        f"Temperature = {temperature:.0f} °C    "
-        f"Collisions this frame = {collision_count}"
-    )
+    v_d_ms = compute_drift_speed(voltage, WIRE_PHYS_LENGTH, mobility)
 
-    drift_curve.plot(t, v_d_um_s)
+    if v_d_ms is None:
+        info.text = (
+            f"Voltage = {voltage:.1f} V    Temperature = {temperature:.0f} °C\n"
+            f"Complete the compute_drift_speed() function above to see measurements."
+        )
+    else:
+        E_field  = voltage / WIRE_PHYS_LENGTH   # V/m
+        v_d_um_s = v_d_ms * 1e6                 # μm/s
+        drift_curve.plot(t, v_d_um_s)
+        info.text = (
+            f"Voltage = {voltage:.1f} V    "
+            f"Electric field = {E_field:.4f} V/m\n"
+            f"Drift speed = {v_d_um_s:.1f} μm/s    "
+            f"Current = {current:.2f} A    "
+            f"Resistance = {resistance:.2f} Ω\n"
+            f"Temperature = {temperature:.0f} °C    "
+            f"Collisions this frame = {collision_count}"
+        )
 
     t += dt
